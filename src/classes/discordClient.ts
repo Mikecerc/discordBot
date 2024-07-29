@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { readdirSync } from 'fs';
 import DatabaseParodyCollection from './databaseParodyCollection';
 export class DiscordClient extends Client {
+    //this is temp. will change any to a proper interface
     public commands: Collection<string, any>;
     public musicSubscriptions: Collection<string, any>;
     public reactionRoles: DatabaseParodyCollection<string, any>;
@@ -10,7 +11,7 @@ export class DiscordClient extends Client {
         super({ intents: 32767});
         this.commands = new Collection();
         this.musicSubscriptions = new Collection();
-        this.reactionRoles = new DatabaseParodyCollection();
+        this.reactionRoles = new DatabaseParodyCollection("ReactionRoles");
         this.connectDb();
         this.loadCommandHandlers();
     }
