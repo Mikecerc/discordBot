@@ -5,11 +5,13 @@ import DatabaseParodyCollection from './databaseParodyCollection';
 export class DiscordClient extends Client {
     //this is temp. will change any to a proper interface
     public commands: Collection<string, any>;
+    public tasks: Collection<string, any>;
     public musicSubscriptions: Collection<string, any>;
     public reactionRoles: DatabaseParodyCollection<string, any>;
     constructor() {
         super({ intents: 32767});
         this.commands = new Collection();
+        this.tasks = new Collection();
         this.musicSubscriptions = new Collection();
         this.reactionRoles = new DatabaseParodyCollection("ReactionRoles");
         this.connectDb();
@@ -22,7 +24,7 @@ export class DiscordClient extends Client {
 
     }
     private async loadCommandHandlers() {
-        //run each handler file
+        //lazy load all command handlers and run them
         readdirSync('./dist/handlers').forEach((handler) => {
         import(`./handlers/${handler}`).then((file) => file.default(this));
         });

@@ -24,7 +24,7 @@ export default class DatabaseParodyCollection<k, v> extends Collection<k, v> {
     //dynamically create the schema for the collection
     //Im not sure If I like using a non-strict schema, however I dont want to have to manully define the schema for each collection. 
     //for now, this will be the best way to dynamically create it from an interface. Will look into later. Should be type safe (enough)
-    this.schema = new Schema<IRecord<k, v>>({},{strict: false});
+    this.schema = new Schema<IRecord<k, v>>({}, { strict: false });
     this.model = model<IRecord<k, v>>(name, this.schema);
 
     //define a cache for the previously saved data. This is used to generate a diff, and thus update the database faster.
@@ -46,7 +46,7 @@ export default class DatabaseParodyCollection<k, v> extends Collection<k, v> {
    */
   protected async sync() {
 
-    await this.loadModels().then((currentModels) => {
+    await this.loadDocuments().then((currentModels) => {
       currentModels.forEach((model) => {
         this.set(model.key, model.value);
       });
@@ -93,28 +93,29 @@ export default class DatabaseParodyCollection<k, v> extends Collection<k, v> {
    */
   private async updateDocuments(positiveDiff: Collection<k, v>, negativeDiff: Collection<k, v>, changes: Collection<k, v | undefined>
   ): Promise<boolean> {
-    // Update the database with the changes
-    console.log("positiveDiff: ", positiveDiff.size)
-    console.log("negativeDiff: ", negativeDiff.size)
-    console.log("changes: ", changes.size)
+
     if (positiveDiff.size > 0) {
-      console.log(this.schema.indexes())
-      //console.log(positiveDiff.map((key, value) => { return { key: key, value: value } }))
-      await this.model.insertMany(positiveDiff.map((key, value) => { return { key: key, value: value } }
+
+      await this.model.insertMany(positiveDiff.map((value, key) => ({ key: key, value: value })
       )).catch((error) => { throw new Error(error) });
-      await this.model.find({}).then((data) => {
-        console.log("data: ", data)
-      })
+
     }
 
     if (negativeDiff.size > 0) {
-      await this.model.deleteMany(negativeDiff.map((key, value) => { return { key: key, value: value } }
-      )).catch((error) => { throw new Error(error) });
+      // console.log(negativeDiff.map((_, k) => (k)));
+      //console.log(await this.model.find({}))
+      await this.model.deleteMany({ key: { $in: negativeDiff.map((_, k) => (k)) } })
+        .catch((error) => { throw new Error(error) });
     }
 
     if (changes != undefined && changes.size > 0) {
-      await this.model.updateMany(changes.map((key, value) => { return { key: key, value: value } }
-      )).catch((error) => { throw new Error(error) });
+      const bulkOps = changes.map((value, key) => ({
+        updateOne: {
+          filter: { key: key },
+          update: { $set: { value: value } }
+        }
+      }));
+      await this.model.bulkWrite(bulkOps).catch((error) => { throw new Error(error) });
     }
 
     return true;
@@ -123,7 +124,7 @@ export default class DatabaseParodyCollection<k, v> extends Collection<k, v> {
   /**
    * @returns a promise that resolves to an array of hydrated documents
    */
-  private async loadModels(): Promise<HydratedDocument<IRecord<k, v>>[]> {
+  public async loadDocuments(): Promise<HydratedDocument<IRecord<k, v>>[]> {
     // Load the models from the database
     return await this.model.find({}).catch((error) => { throw new Error(error) });
   }
