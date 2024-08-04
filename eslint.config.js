@@ -1,26 +1,26 @@
-import { Linter } from 'eslint';
+import typescript from "@typescript-eslint/eslint-plugin";
+import prettier from "eslint-plugin-prettier";
+import parser from "@typescript-eslint/parser";
+export default [
+    {
+        files: ["src/**/*.ts", "test/**/*.ts"],
+        ignores: ["coverage/*"],
+        languageOptions: {
+            parser: parser, // Specifies the ESLint parser
+            parserOptions: {
+                ecmaVersion: 2018, // Allows for the parsing of modern ECMAScript features
+                sourceType: "module", // Allows for the use of imports
+            },
+        },
 
-/** @type {Linter.Config} */
-const config = {
-  env: {
-    browser: true,
-    es2021: true,
-    node: true,
-  },
-  extends: [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-    'plugin:prettier/recommended',
-  ],
-  parser: '@typescript-eslint/parser',
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-  },
-  plugins: ['@typescript-eslint', 'prettier'],
-  rules: {
-    'prettier/prettier': 'error',
-  },
-};
+        plugins: {
+            "@typescript-eslint": typescript,
+            prettier: prettier,
+        },
 
-export default config;
+        rules: {
+            // Place to specify ESLint rules. Can be used to overwrite rules specified from the extended configs
+            // e.g. "@typescript-eslint/explicit-function-return-type": "off",
+        },
+    },
+];

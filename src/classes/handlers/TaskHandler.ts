@@ -13,18 +13,22 @@ export default class TaskHandler {
         this.taskFiles = [];
         const rootTaskFolder = readdirSync("./dist/tasks");
         rootTaskFolder.forEach((item) => {
-            item.endsWith(".js") ? this.taskFiles.push(item) : this.taskFolders.push(item);
-        })
+            item.endsWith(".js")
+                ? this.taskFiles.push(item)
+                : this.taskFolders.push(item);
+        });
         this.taskFolders.forEach((folder) => {
-            const taskFiles = readdirSync(`./dist/tasks/${folder}`).filter((files) => files.endsWith(".js") && !files.includes("types"));
+            const taskFiles = readdirSync(`./dist/tasks/${folder}`).filter(
+                (files) => files.endsWith(".js") && !files.includes("types"),
+            );
             taskFiles.forEach((file) => {
                 this.taskFiles.push(file);
             });
         });
     }
-    
+
     /**
-     * @param client 
+     * @param client
      * @returns void
      * @description Lazy loads all task files
      */
@@ -41,7 +45,7 @@ export default class TaskHandler {
     }
 
     /**
-     * @param client 
+     * @param client
      * @returns void
      * @description Initializes all tasks
      */

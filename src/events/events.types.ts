@@ -1,13 +1,22 @@
-import { CommandInteraction, ClientEvents } from "discord.js";
+import { Interaction, ButtonBuilder, ChannelSelectMenuBuilder, ClientEvents, MentionableSelectMenuBuilder, ModalBuilder, RoleSelectMenuBuilder, StringSelectMenuBuilder, UserSelectMenuBuilder } from "discord.js";
 import { DiscordClient } from "../classes/discordClient";
-export abstract class abstractEvent {
-    abstract name: ClientEvents;
-    abstract once?: boolean; 
-    abstract execute: (client: DiscordClient,...args: any) => void;
+export interface IEvent {
+    name: string;
+    once?: boolean;
+    execute: (client: DiscordClient, ...args: any) => void;
+}
+export abstract class abstractStaticEvent implements IEvent {
+    abstract name: string;
+    abstract once: boolean;
+    abstract execute(client: DiscordClient, ...args: any): void;
 }
 
-export abstract class abstractDynamicRegisteredEvent extends abstractEvent {
-    abstract guid: string;
-    abstract initialization: Date;
-    abstract expiry: Date;
+export interface IDynamicallyRegisteredEvent {
+    guid: string;
+    initialization: Date;
+    expiry: Date;
+    data: any;
+    event: IEvent;
 }
+
+export type dynamicEventTypes = ModalBuilder | ButtonBuilder | StringSelectMenuBuilder | UserSelectMenuBuilder | RoleSelectMenuBuilder | MentionableSelectMenuBuilder | ChannelSelectMenuBuilder;

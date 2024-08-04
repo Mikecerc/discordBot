@@ -19,10 +19,16 @@ export default class CommandHandler {
         this.commandFiles = [];
         const rootCommandFolder = readdirSync("./dist/commands");
         rootCommandFolder.forEach((item) => {
-            item.endsWith(".js") ? this.commandFiles.push(item) : this.commandFolders.push(item);
-        })
+            item.endsWith(".js")
+                ? this.commandFiles.push(item)
+                : this.commandFolders.push(item);
+        });
         this.commandFolders.forEach((folder) => {
-            const commandFiles = readdirSync(`./dist/commands/${folder}`).filter((files) => files.endsWith(".js") && !files.includes("types"));
+            const commandFiles = readdirSync(
+                `./dist/commands/${folder}`,
+            ).filter(
+                (files) => files.endsWith(".js") && !files.includes("types"),
+            );
             commandFiles.forEach((file) => {
                 this.commandFiles.push(file);
             });
@@ -30,14 +36,16 @@ export default class CommandHandler {
     }
 
     /**
-     * @param client 
+     * @param client
      * @returns void
      * @description Lazy loads all command files
      */
     private async lazyLoadCommands(client: DiscordClient): Promise<void> {
         try {
             this.commandFiles.forEach(async (file: string) => {
-                const command: abstractCommand = await import(`../commands/${file}`);
+                const command: abstractCommand = await import(
+                    `../commands/${file}`
+                );
                 client.commands.set(command.data.name, command);
                 this.commandsArray.push(command.data);
             });
@@ -47,7 +55,7 @@ export default class CommandHandler {
     }
 
     /**
-     * @param client 
+     * @param client
      * @returns void
      * @description Initializes all commands
      */
@@ -78,7 +86,6 @@ export default class CommandHandler {
             } catch (err) {
                 throw new Error(err as string);
             }
-            
         });
     }
 }
