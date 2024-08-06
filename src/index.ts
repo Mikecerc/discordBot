@@ -6,4 +6,4 @@ env.config();
 const client = new DiscordClient();
 export default client;
 //loging client
-client.login(process.env.token);
+client.login(process.env.TOKEN);

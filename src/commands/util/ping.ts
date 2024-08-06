@@ -10,7 +10,7 @@ export default abstract class Ping extends abstractCommand {
     static data: SlashCommandBuilder = new SlashCommandBuilder()
         .setName("ping")
         .setDescription("Round trip travel between Void and the Discord API");
-    static execute(interaction: CommandInteraction, client: DiscordClient) {
+    static execute(client: DiscordClient, interaction: CommandInteraction) {
         const Response = new EmbedBuilder()
             .setColor("Orange")
             .setDescription(`🏓${client.ws.ping}ms`);

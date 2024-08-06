@@ -1,4 +1,14 @@
-import { Interaction, ButtonBuilder, ChannelSelectMenuBuilder, ClientEvents, MentionableSelectMenuBuilder, ModalBuilder, RoleSelectMenuBuilder, StringSelectMenuBuilder, UserSelectMenuBuilder } from "discord.js";
+import {
+    Interaction,
+    ButtonBuilder,
+    ChannelSelectMenuBuilder,
+    ClientEvents,
+    MentionableSelectMenuBuilder,
+    ModalBuilder,
+    RoleSelectMenuBuilder,
+    StringSelectMenuBuilder,
+    UserSelectMenuBuilder,
+} from "discord.js";
 import { DiscordClient } from "../classes/discordClient";
 export interface IEvent {
     name: string;
@@ -16,7 +26,15 @@ export interface IDynamicallyRegisteredEvent {
     initialization: Date;
     expiry: Date;
     data: any;
+    eventData: any;
     event: IEvent;
 }
 
-export type dynamicEventTypes = ModalBuilder | ButtonBuilder | StringSelectMenuBuilder | UserSelectMenuBuilder | RoleSelectMenuBuilder | MentionableSelectMenuBuilder | ChannelSelectMenuBuilder;
+export type dynamicEventTypes =
+    | ModalBuilder
+    | ButtonBuilder
+    | StringSelectMenuBuilder
+    | UserSelectMenuBuilder
+    | RoleSelectMenuBuilder
+    | MentionableSelectMenuBuilder
+    | ChannelSelectMenuBuilder;

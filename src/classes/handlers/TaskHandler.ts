@@ -11,18 +11,21 @@ export default class TaskHandler {
         //constructor
         this.taskFolders = [];
         this.taskFiles = [];
-        const rootTaskFolder = readdirSync("./dist/tasks");
-        rootTaskFolder.forEach((item) => {
-            item.endsWith(".js")
-                ? this.taskFiles.push(item)
-                : this.taskFolders.push(item);
-        });
+        const rootTaskFolder = readdirSync("./src/tasks");
+        rootTaskFolder
+            .filter((f) => !f.endsWith(".disabled") && !f.includes("types"))
+            .forEach((item) => {
+                item.endsWith(".ts")
+                    ? this.taskFiles.push(item.slice(0, -3))
+                    : this.taskFolders.push(item);
+            });
         this.taskFolders.forEach((folder) => {
-            const taskFiles = readdirSync(`./dist/tasks/${folder}`).filter(
-                (files) => files.endsWith(".js") && !files.includes("types"),
+            const taskFiles = readdirSync(`./src/tasks/${folder}`).filter(
+                (files) => files.endsWith(".ts") && !files.includes("types"),
             );
             taskFiles.forEach((file) => {
-                this.taskFiles.push(file);
+                //push the folder, and file paths but remove the .ts extension
+                this.taskFiles.push((folder + "/" + file).slice(0, -3));
             });
         });
     }
@@ -35,7 +38,8 @@ export default class TaskHandler {
     private async lazyLoadTasks(client: DiscordClient): Promise<void> {
         try {
             this.taskFiles.forEach(async (file: string) => {
-                const task: abstractTask = await import(`../tasks/${file}`);
+                const task: abstractTask = (await import(`../../tasks/${file}`))
+                    .default;
                 client.tasks.set(task.name, task);
                 this.tasksArray.push(task);
             });

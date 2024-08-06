@@ -1,36 +1,90 @@
 import { Client, Collection } from "discord.js";
 import mongoose from "mongoose";
-import { readdirSync } from "fs";
 import DatabaseParodyCollection from "./databaseParodyCollection";
+import HandlerManager from "./handlers/HandlerManager";
+import { COLORS, IColors } from "../constants";
 export class DiscordClient extends Client {
-    //this is temp. will change any to a proper interface
     public commands: Collection<string, any>;
     public tasks: Collection<string, any>;
     public musicSubscriptions: Collection<string, any>;
     public reactionRoles: DatabaseParodyCollection<string, any>;
+    public handlers: HandlerManager;
+    public colors: IColors;
     constructor() {
         super({ intents: 32767 });
+        this.checkEnv();
         this.commands = new Collection();
         this.tasks = new Collection();
         this.musicSubscriptions = new Collection();
-        this.reactionRoles = new DatabaseParodyCollection("ReactionRoles");
         this.connectDb();
-        this.loadCommandHandlers();
-    }
-    public async reloadCommands() {}
-    public async reloadEvents() {}
-    private async loadCommandHandlers() {
-        //lazy load all command handlers and run them
-        readdirSync("./dist/handlers").forEach((handler) => {
-            import(`./handlers/${handler}`).then((file) => file.default(this));
+        this.reactionRoles = new DatabaseParodyCollection("ReactionRoles");
+        this.handlers = new HandlerManager(this);
+        this.colors = COLORS;
+
+        this.on("ready", () => {
+            console.log(`Logged in as ${this.user?.tag}`);
         });
+    }
+    public async reloadCommands() {
+        this.handlers.reloadCommands();
+    }
+    public async reloadEvents() {
+        //static event files only
+        this.handlers.reloadEvents();
     }
     private async connectDb() {
         try {
-            mongoose.connect(process.env.db as string);
+            if (process.env.DEPLOYMENT == "PROD") {
+                await mongoose.connect(
+                    ((process.env.DB_URL as string) +
+                        process.env.PROD_DB_NAME) as string,
+                );
+            } else if (process.env.DEPLOYMENT == "DEV") {
+                await mongoose.connect(
+                    ((process.env.DB_URL as string) +
+                        process.env.DEV_DB_NAME) as string,
+                );
+            } else if (process.env.DEPLOYMENT == "TEST") {
+                await mongoose.connect(
+                    ((process.env.DB_URL as string) +
+                        process.env.TEST_DB_NAME) as string,
+                );
+            } else {
+                throw new Error("Invalid deployment environment provided");
+            }
+
             console.log("connected to db");
         } catch (err) {
-            console.error("error connecting to mongoDb", err);
+            throw new Error(
+                ("Error connecting to mongoDb: \n" + err) as string,
+            );
+        }
+    }
+    private checkEnv() {
+        if (!process.env.TOKEN) {
+            throw new Error("No token provided");
+        }
+        if (!process.env.DEPLOYMENT) {
+            throw new Error("No deployment environment provided");
+        }
+        if (
+            process.env.DEPLOYMENT != "PROD" &&
+            process.env.DEPLOYMENT != "DEV" &&
+            process.env.DEPLOYMENT != "TEST"
+        ) {
+            throw new Error("Invalid deployment environment provided");
+        }
+        if (!process.env.DB_URL) {
+            throw new Error("No db url provided");
+        }
+        if (!process.env.PROD_DB_NAME) {
+            throw new Error("No prod db name provided");
+        }
+        if (!process.env.DEV_DB_NAME) {
+            throw new Error("No dev db name provided");
+        }
+        if (!process.env.TEST_DB_NAME) {
+            throw new Error("No test db name provided");
         }
     }
 }

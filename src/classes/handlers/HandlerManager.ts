@@ -1,7 +1,7 @@
 import { DiscordClient } from "../discordClient";
 import CommandHandler from "./CommandHandler";
 import StaticEventHandler from "./StaticEventHandler";
-import DynamicEventHandler from "./StaticEventHandler";
+import DynamicEventHandler from "./DynamicEventHandler";
 import TaskHandler from "./TaskHandler";
 
 export default class HandlerManager {
@@ -22,5 +22,11 @@ export default class HandlerManager {
 
         this.TaskHandler = new TaskHandler();
         this.TaskHandler.initializeTasks(client);
+    }
+    public reloadCommands() {
+        this.commandHandler = new CommandHandler();
+    }
+    public reloadEvents() {
+        // this.StaticEventHandler = new StaticEventHandler();
     }
 }

@@ -12,25 +12,27 @@ export default class CommandHandler {
     public commandsArray: SlashCommandBuilder[];
     private commandFolders: string[];
     private commandFiles: string[];
+
     constructor() {
         //constructor
+        console.log(__dirname);
         this.commandsArray = [];
         this.commandFolders = [];
         this.commandFiles = [];
-        const rootCommandFolder = readdirSync("./dist/commands");
-        rootCommandFolder.forEach((item) => {
-            item.endsWith(".js")
-                ? this.commandFiles.push(item)
-                : this.commandFolders.push(item);
-        });
+        const rootCommandFolder = readdirSync("./src/commands");
+        rootCommandFolder
+            .filter((f) => !f.endsWith(".disabled") && !f.includes("types"))
+            .forEach((item) => {
+                item.endsWith(".ts")
+                    ? this.commandFiles.push(item.slice(0, -3))
+                    : this.commandFolders.push(item);
+            });
         this.commandFolders.forEach((folder) => {
-            const commandFiles = readdirSync(
-                `./dist/commands/${folder}`,
-            ).filter(
-                (files) => files.endsWith(".js") && !files.includes("types"),
+            const commandFiles = readdirSync(`./src/commands/${folder}`).filter(
+                (files) => files.endsWith(".ts") && !files.includes("types"),
             );
             commandFiles.forEach((file) => {
-                this.commandFiles.push(file);
+                this.commandFiles.push(folder + "/" + file.slice(0, -3));
             });
         });
     }
@@ -43,9 +45,8 @@ export default class CommandHandler {
     private async lazyLoadCommands(client: DiscordClient): Promise<void> {
         try {
             this.commandFiles.forEach(async (file: string) => {
-                const command: abstractCommand = await import(
-                    `../commands/${file}`
-                );
+                const command: abstractCommand = (await import(`../../commands/${file}`)).default;
+
                 client.commands.set(command.data.name, command);
                 this.commandsArray.push(command.data);
             });
@@ -70,7 +71,7 @@ export default class CommandHandler {
                     return res;
                 });
                 //test mode determines if the commands will be set globally or locally (by guild)
-                if (process.env.testMode == "true") {
+                if (process.env.DEPLOYMENT == "DEV") {
                     //for each guild, set the commands and remove all global commands
                     for (const guild in guilds) {
                         await guilds[guild].commands.set(this.commandsArray);
@@ -83,6 +84,9 @@ export default class CommandHandler {
                         await guilds[guild].commands.set([]);
                     }
                 }
+                console.log(
+                    `Initialized ${this.commandsArray.length} command(s)`,
+                );
             } catch (err) {
                 throw new Error(err as string);
             }

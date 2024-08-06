@@ -3,26 +3,27 @@ import { DiscordClient } from "../discordClient";
 import { abstractStaticEvent, IEvent } from "../../events/events.types";
 
 export default class StaticEventHandler {
-    public eventsArray: IEvent[];
     private eventFolders: string[];
     private eventFiles: string[];
     constructor() {
         //constructor
-        this.eventsArray = [];
         this.eventFolders = [];
         this.eventFiles = [];
-        const rooteventFolder = readdirSync("./dist/events");
-        rooteventFolder.forEach((item) => {
-            item.endsWith(".js")
-                ? this.eventFiles.push(item)
-                : this.eventFolders.push(item);
-        });
+        const rooteventFolder = readdirSync("./src/events");
+        rooteventFolder
+            .filter((f) => !f.endsWith(".disabled") && !f.includes("types"))
+            .forEach((item) => {
+                console.log(item)
+                item.endsWith(".ts")
+                    ? this.eventFiles.push(item.slice(0, -3))
+                    : this.eventFolders.push(item);
+            });
         this.eventFolders.forEach((folder) => {
-            const eventFiles = readdirSync(`./dist/events/${folder}`).filter(
-                (files) => files.endsWith(".js") && !files.includes("types"),
+            const eventFiles = readdirSync(`./src/events/${folder}`).filter(
+                (files) => files.endsWith(".ts") && !files.includes("types"),
             );
             eventFiles.forEach((file) => {
-                this.eventFiles.push(file);
+                this.eventFiles.push((folder + "/" + file).slice(0, -3));
             });
         });
     }
@@ -32,12 +33,15 @@ export default class StaticEventHandler {
      * @returns void
      * @description Lazy loads all event files
      */
-    private async lazyLoadevents(client: DiscordClient): Promise<void> {
+    private async lazyLoadevents(): Promise<IEvent[]> {
         try {
-            this.eventFiles.forEach(async (file: string) => {
-                const event: abstractStaticEvent = await import(`../events/${file}`);
-                this.eventsArray.push(event);
-            });
+            let eventsArray: IEvent[] = [];
+            await Promise.all(this.eventFiles.map(async (file: string) => {
+                const event: abstractStaticEvent = (await import(`../../events/${file}`))
+                    .default;
+                eventsArray.push(event);
+            }));
+            return eventsArray;
         } catch (err) {
             throw new Error(err as string);
         }
@@ -48,27 +52,34 @@ export default class StaticEventHandler {
      * @returns void
      * @description Initializes all events
      */
-    public async initializeStaticEventFiles(client: DiscordClient): Promise<void> {
-        await this.lazyLoadevents(client);
+    public async initializeStaticEventFiles(
+        client: DiscordClient,
+    ): Promise<void> {
+        let events: IEvent[] = await this.lazyLoadevents();
         //initialize all events
-        this.eventsArray.forEach(async (event) => {
-            if (event.once) {
-                client.once(event.name, (...args: any) => {
-                    try {
-                        event.execute(client, ...args);
-                    } catch (err) {
-                        throw new Error(err as string);
-                    }
-                });
-            } else {
-                client.on(event.name, (...args: any) => {
-                    try {
-                        event.execute(client, ...args);
-                    } catch (err) {
-                        throw new Error(err as string);
-                    }
-                });
+        events.forEach(async (event) => {
+            try {
+                if (event.once) {
+                    client.once(event.name, (...args: any) => {
+                        try {
+                            event.execute(client, ...args);
+                        } catch (err) {
+                            throw new Error(err as string);
+                        }
+                    });
+                } else {
+                    client.on(event.name, (...args: any) => {
+                        try {
+                            event.execute(client, ...args);
+                        } catch (err) {
+                            throw new Error(err as string);
+                        }
+                    });
+                }
+            } catch {
+                throw new Error("Error initializing events");
             }
         });
+        console.log(`Loaded ${events.length} static events`);
     }
 }
